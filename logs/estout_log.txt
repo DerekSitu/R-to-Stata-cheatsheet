@@ -1,0 +1,132 @@
+---------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\situ_\OneDrive\Desktop\RA\COMET\logs\estout_log.txt
+  log type:  text
+ opened on:  16 Jan 2024, 14:59:13
+
+. 
+. * Following along https://libguides.library.nd.edu/data-analysis-stata/tables
+. 
+. sysuse nlsw88, clear
+(NLSW, 1988 extract)
+
+. 
+. tabulate race, gen(dum_race) // make dummies for each category of race
+
+       race |      Freq.     Percent        Cum.
+------------+-----------------------------------
+      white |      1,637       72.89       72.89
+      black |        583       25.96       98.84
+      other |         26        1.16      100.00
+------------+-----------------------------------
+      Total |      2,246      100.00
+
+. 
+. // Make simple table
+. estpost summarize age wage dum_race1 dum_race2 dum_race3 collgrad
+
+             |  e(count)   e(sum_w)    e(mean)     e(Var)      e(sd)     e(min)     e(max)     e(sum) 
+-------------+----------------------------------------------------------------------------------------
+         age |      2246       2246   39.15316   9.363614   3.060002         34         46      87938 
+        wage |      2246       2246   7.766949   33.12604   5.755523   1.004952   40.74659   17444.57 
+   dum_race1 |      2246       2246   .7288513   .1977151   .4446517          0          1       1637 
+   dum_race2 |      2246       2246   .2595726   .1922803   .4384977          0          1        583 
+   dum_race3 |      2246       2246   .0115761   .0114472   .1069917          0          1         26 
+    collgrad |      2246       2246   .2368655   .1808408   .4252538          0          1        532 
+
+. eststo summstats
+
+. esttab summstats using ".\tables\table1.rtf", replace main(mean %6.2f) ///
+>         aux(sd) label
+(output written to .\tables\table1.rtf)
+
+. esttab summstats using ".\tables\table1.tex", replace main(mean %6.2f) ///
+>         aux(sd) label
+(output written to .\tables\table1.tex)
+
+. 
+. // Add columns for subsamples
+. eststo grad: estpost summarize age wage dum_race1 dum_race2 dum_race3 ///
+>         if collgrad==1
+
+             |  e(count)   e(sum_w)    e(mean)     e(Var)      e(sd)     e(min)     e(max)     e(sum) 
+-------------+----------------------------------------------------------------------------------------
+         age |       532        532   39.11278    9.16993   3.028189         34         46      20808 
+        wage |       532        532   10.52606   40.01616   6.325833   1.032247   40.74659   5599.866 
+   dum_race1 |       532        532   .7894737    .166518   .4080662          0          1        420 
+   dum_race2 |       532        532    .193609   .1564186   .3954979          0          1        103 
+   dum_race3 |       532        532   .0169173   .0166624    .129083          0          1          9 
+
+. eststo nograd: estpost summarize age wage dum_race1 dum_race2 dum_race3 ///
+>         if collgrad==0
+
+             |  e(count)   e(sum_w)    e(mean)     e(Var)      e(sd)     e(min)     e(max)     e(sum) 
+-------------+----------------------------------------------------------------------------------------
+         age |      1714       1714   39.16569   9.428455   3.070579         34         46      67130 
+        wage |      1714       1714   6.910561   27.91149   5.283132   1.004952   40.19808    11844.7 
+   dum_race1 |      1714       1714    .710035   .2060055   .4538783          0          1       1217 
+   dum_race2 |      1714       1714   .2800467   .2017382   .4491528          0          1        480 
+   dum_race3 |      1714       1714   .0099183   .0098257   .0991246          0          1         17 
+
+. esttab summstats grad nograd using ".\tables\table2.rtf", replace ///
+>         main(mean %6.2f) aux(sd) ///
+>         mtitle("Full sample" "College graduates" "Non-college graduates") ///
+>         coeflabel(dum_race1 "White" dum_race2 "Black" dum_race3 "Other" age ///
+>                           "Age" wage "Hourly wage" collgrad "College graduate") ///
+>         title(Table 2. Summary Statistics, NLSW88) ///
+>         nogaps compress refcat(dum_race1 "Race:", nolabel)
+(output written to .\tables\table2.rtf)
+
+. esttab summstats grad nograd using ".\tables\table2.tex", replace ///
+>         main(mean %6.2f) aux(sd) ///
+>         mtitle("Full sample" "College graduates" "Non-college graduates") ///
+>         coeflabel(dum_race1 "White" dum_race2 "Black" dum_race3 "Other" age ///
+>                           "Age" wage "Hourly wage" collgrad "College graduate") ///
+>         title(Table 2. Summary Statistics, NLSW88) ///
+>         nogaps compress refcat(dum_race1 "Race:", nolabel)
+(output written to .\tables\table2.tex)
+
+.         
+. // Add column for t-test of difference between subsamples
+. eststo groupdiff: estpost ttest age wage dum_race1 dum_race2 dum_race3, ///
+>         by(collgrad)
+
+             |      e(b)   e(count)      e(se)       e(t)    e(df_t)     e(p_l)       e(p)     e(p_u) 
+-------------+----------------------------------------------------------------------------------------
+         age |  .0529123       2246   .1518974   .3483425       2244   .6361922   .7276157   .3638078 
+        wage | -3.615502       2246   .2753268  -13.13167       2244   2.63e-38   5.26e-38          1 
+   dum_race1 | -.0794387       2246   .0220092  -3.609347       2244   .0001568   .0003137   .9998432 
+   dum_race2 |  .0864377       2246   .0216908   3.984983       2244   .9999652   .0000696   .0000348 
+   dum_race3 |  -.006999       2246   .0053091  -1.318293       2244   .0937701   .1875401   .9062299 
+
+             |    e(N_1)    e(mu_1)     e(N_2)    e(mu_2) 
+-------------+--------------------------------------------
+         age |      1714   39.16569        532   39.11278 
+        wage |      1714   6.910561        532   10.52606 
+   dum_race1 |      1714    .710035        532   .7894737 
+   dum_race2 |      1714   .2800467        532    .193609 
+   dum_race3 |      1714   .0099183        532   .0169173 
+
+. 
+. esttab summstats grad nograd groupdiff using ".\tables\table3.rtf", replace ///
+>         main(mean %6.2f) aux(sd) ///
+>         mtitle("Full sample" "College graduates" "Non-college graduates" "Difference (3)-(2)") ///
+>         nogaps compress refcat(dum_race1 "Race:", nolabel) ///
+>         coeflabel(dum_race1 "White" dum_race2 "Black" dum_race3 "Other" age ///
+>                           "Age" wage "Hourly wage" collgrad "College graduate") ///
+>         title(Table 2. Summary Statistics, NLSW88)
+(output written to .\tables\table3.rtf)
+
+. esttab summstats grad nograd groupdiff using ".\tables\table3.tex", replace ///
+>         cell("mean(pattern(1 1 1 0) fmt(2)) b(pattern(0 0 0 1) fmt(2)) se(pattern(0 0 0 1) fmt(2))") //
+> /
+>         mtitle("Full sample" "College graduates" "Non-college graduates" "Difference (3)-(2)") ///
+>         nogaps compress refcat(dum_race1 "Race:", nolabel) ///
+>         coeflabel(dum_race1 "White" dum_race2 "Black" dum_race3 "Other" age ///
+>                           "Age" wage "Hourly wage" collgrad "College graduate") ///
+>         title(Table 2. Summary Statistics, NLSW88)
+(output written to .\tables\table3.tex)
+
+. 
+. 
+. capture log close

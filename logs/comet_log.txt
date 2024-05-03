@@ -1,0 +1,586 @@
+---------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\situ_\OneDrive\Desktop\RA\COMET\logs\comet_log.txt
+  log type:  text
+ opened on:  16 Jan 2024, 18:58:37
+
+. 
+. // Importing, exporting data //
+. use "$data_dir\fake_data.dta", clear
+
+. save "$data_dir\edited_fake_data.dta", replace 
+file .\data\edited_fake_data.dta saved
+
+. export delimited using "$data_dir\fake_data.csv", replace
+file .\data\fake_data.csv saved
+
+. import delimited using "$data_dir\fake_data.csv", clear // can also do excel
+(11 vars, 138,138 obs)
+
+. 
+. sysuse auto.dta, clear
+(1978 Automobile Data)
+
+. 
+. // Getting to know the dataset //
+. describe price mpg // %>% select(price, mpg) %>% str() 
+
+              storage   display    value
+variable name   type    format     label      variable label
+---------------------------------------------------------------------------------------------------------
+price           int     %8.0gc                Price
+mpg             int     %8.0g                 Mileage (mpg)
+
+. list price mpg in 1/3 // %>% select(price, mpg) %>% head(3)
+
+     +-------------+
+     | price   mpg |
+     |-------------|
+  1. | 4,099    22 |
+  2. | 4,749    17 |
+  3. | 3,799    22 |
+     +-------------+
+
+. codebook price mpg // similar to summarize but more info including missingness
+
+---------------------------------------------------------------------------------------------------------
+price                                                                                               Price
+---------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (int)
+
+                 range:  [3291,15906]                 units:  1
+         unique values:  74                       missing .:  0/74
+
+                  mean:   6165.26
+              std. dev:    2949.5
+
+           percentiles:        10%       25%       50%       75%       90%
+                              3895      4195    5006.5      6342     11385
+
+---------------------------------------------------------------------------------------------------------
+mpg                                                                                         Mileage (mpg)
+---------------------------------------------------------------------------------------------------------
+
+                  type:  numeric (int)
+
+                 range:  [12,41]                      units:  1
+         unique values:  21                       missing .:  0/74
+
+                  mean:   21.2973
+              std. dev:    5.7855
+
+           percentiles:        10%       25%       50%       75%       90%
+                                14        18        20        25        29
+
+. tabulate foreign // shows n, n(%). can also use with 2 variables
+
+   Car type |      Freq.     Percent        Cum.
+------------+-----------------------------------
+   Domestic |         52       70.27       70.27
+    Foreign |         22       29.73      100.00
+------------+-----------------------------------
+      Total |         74      100.00
+
+. lookfor weight // search for a variable, useful if there are many
+
+              storage   display    value
+variable name   type    format     label      variable label
+---------------------------------------------------------------------------------------------------------
+weight          int     %8.0gc                Weight (lbs.)
+
+. 
+. // Summary stats, ifs, operators //
+. summarize make mpg foreign if price > 5000 & (mpg <= 25 | gear_ratio > 3)
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+        make |          0
+         mpg |         37          19    5.446712         12         41
+     foreign |         37    .3783784    .4916724          0          1
+
+. summarize price if !missing(rep78)
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         69    6146.043     2912.44       3291      15906
+
+. summarize price if rep78 != . // same thing since missing numerics are a blank
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         69    6146.043     2912.44       3291      15906
+
+. summarize price if make != "" // missing strings are empty strings
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         74    6165.257    2949.496       3291      15906
+
+. 
+. sort price // ascending order
+
+. summarize price in 1/10
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         10      3726.5    245.9007       3291       3984
+
+. list make price in -5/L // list 5 cars with highest price
+
+     +---------------------------+
+     | make                price |
+     |---------------------------|
+ 70. | Peugeot 604        12,990 |
+ 71. | Linc. Versailles   13,466 |
+ 72. | Linc. Mark V       13,594 |
+ 73. | Cad. Eldorado      14,500 |
+ 74. | Cad. Seville       15,906 |
+     +---------------------------+
+
+. 
+. // Local variables //
+. local i = 95
+
+. local course = "ECON 490"
+
+. display `i' // use backtick and apostrophe to reference local variables
+95
+
+. display "`course'"
+ECON 490
+
+. display "I am enrolled in `course' and hope my grade will be `i'%!"
+I am enrolled in ECON 490 and hope my grade will be 95%!
+
+. 
+. // Loops //
+. forvalues i=30(5)50{ // for (i in seq(30,50,5)) { iterate over integers
+  2.         display `i'
+  3. }
+30
+35
+40
+45
+50
+
+. foreach var in "mpg" "price"{ // iterate over a list of strings
+  2.     summarize `var'
+  3. }
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+         mpg |         74     21.2973    5.785503         12         41
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         74    6165.257    2949.496       3291      15906
+
+. local counter = 1 // while loop
+
+. while `counter'<5{
+  2.     display `counter'
+  3.     local counter = `counter'+1
+  4. }
+1
+2
+3
+4
+
+. 
+. // Storing results //
+. summarize price, detail
+
+                            Price
+-------------------------------------------------------------
+      Percentiles      Smallest
+ 1%         3291           3291
+ 5%         3748           3299
+10%         3895           3667       Obs                  74
+25%         4195           3748       Sum of Wgt.          74
+
+50%       5006.5                      Mean           6165.257
+                        Largest       Std. Dev.      2949.496
+75%         6342          13466
+90%        11385          13594       Variance        8699526
+95%        13466          14500       Skewness       1.653434
+99%        15906          15906       Kurtosis       4.819188
+
+. return list // returns local variables used to print output.
+
+scalars:
+                  r(N) =  74
+              r(sum_w) =  74
+               r(mean) =  6165.256756756757
+                r(Var) =  8699525.97426879
+                 r(sd) =  2949.495884768919
+           r(skewness) =  1.653433511704861
+           r(kurtosis) =  4.819187528464004
+                r(sum) =  456229
+                r(min) =  3291
+                r(max) =  15906
+                 r(p1) =  3291
+                 r(p5) =  3748
+                r(p10) =  3895
+                r(p25) =  4195
+                r(p50) =  5006.5
+                r(p75) =  6342
+                r(p90) =  11385
+                r(p95) =  13466
+                r(p99) =  15906
+
+.         // ereturn list for estimation commands
+. 
+. display r(mean)
+6165.2568
+
+. local price_mean = r(mean)
+
+. display "The mean of the price variable is `price_mean'."
+The mean of the price variable is 6165.256756756757.
+
+. 
+. // Creating variables //
+. gen price_demean = price - `price_mean'
+
+. gen log_price = log(price)
+
+. 
+. gen origin = "domestic"
+
+. replace origin = "foreign" if foreign == 1 // %>% mutate(origin = if_else(...))
+(22 real changes made)
+
+. 
+. tabulate rep78, generate(rep)
+
+     Repair |
+Record 1978 |      Freq.     Percent        Cum.
+------------+-----------------------------------
+          1 |          2        2.90        2.90
+          2 |          8       11.59       14.49
+          3 |         30       43.48       57.97
+          4 |         18       26.09       84.06
+          5 |         11       15.94      100.00
+------------+-----------------------------------
+      Total |         69      100.00
+
+.         //tabulate rep78 and generate dummies for each level of rep78
+. describe rep* // describe all variables with name starting with rep
+
+              storage   display    value
+variable name   type    format     label      variable label
+---------------------------------------------------------------------------------------------------------
+rep78           int     %8.0g                 Repair Record 1978
+rep1            byte    %8.0g                 rep78== 1.0000
+rep2            byte    %8.0g                 rep78== 2.0000
+rep3            byte    %8.0g                 rep78== 3.0000
+rep4            byte    %8.0g                 rep78== 4.0000
+rep5            byte    %8.0g                 rep78== 5.0000
+
+. 
+. rename price_demean price_demeaned
+
+. 
+. // Dummy variables //
+. codebook origin
+
+---------------------------------------------------------------------------------------------------------
+origin                                                                                        (unlabeled)
+---------------------------------------------------------------------------------------------------------
+
+                  type:  string (str8)
+
+         unique values:  2                        missing "":  0/74
+
+            tabulation:  Freq.  Value
+                            52  "domestic"
+                            22  "foreign"
+
+. gen foreign_dummy = origin == "foreign"
+
+. fvset base 1 foreign_dummy // set reference level to 1
+
+. 
+. // Regression with dummy:
+. * reg logearnings i.region
+.         // put i. as a prefix, equivalent to as.factor(...)
+. * reghdfe logearnings age, absorb(region)
+.         // equivalent but works with many levels (High-Dimensional Fixed Effects)
+.         // suppresses coefficients for the many levels
+. 
+. // Labels //
+. label data "Auto data" // can check with describe that it changed
+
+. label variable price_demean "Demeaned Price"
+
+. 
+. label define foreignl 0 "domestic car" 1 "foreign car" 
+
+.         // create a value label foreignl that labels 1 as "foreign car"
+. label values foreign foreignl // associate foreign with the value label foreignl
+
+. 
+. quietly display "hello world" // suppress output
+
+. 
+. // Summarizing a variable based on its value of another variable //
+. levelsof rep78, local(levels_rep) 
+1 2 3 4 5
+
+.         // define a new local variable levels_rep as the levels of rep78
+. foreach level in `levels_rep' {
+  2.         summarize price if rep78 == `level'
+  3. }
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |          2      4564.5    522.5519       4195       4934
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |          8    5967.625    3579.357       3667      14500
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         30    6429.233     3525.14       3291      15906
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         18      6071.5    1709.608       3829       9735
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         11        5913    2615.763       3748      11995
+
+. 
+. // Global variables //
+. global covariates "rep78 foreign"
+
+. su ${covariates}
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       rep78 |         69    3.405797    .9899323          1          5
+     foreign |         74    .2972973    .4601885          0          1
+
+. global controls trunk foreign
+
+. reg price mpg $controls // curly brackets and quotations seem optional
+
+      Source |       SS           df       MS      Number of obs   =        74
+-------------+----------------------------------   F(3, 70)        =      9.68
+       Model |   186257112         3  62085704.1   Prob > F        =    0.0000
+    Residual |   448808284        70  6411546.91   R-squared       =    0.2933
+-------------+----------------------------------   Adj R-squared   =    0.2630
+       Total |   635065396        73  8699525.97   Root MSE        =    2532.1
+
+------------------------------------------------------------------------------
+       price |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+         mpg |  -261.9892   64.91261    -4.04   0.000    -391.4533   -132.5251
+       trunk |   83.64631   86.50052     0.97   0.337    -88.87354    256.1662
+     foreign |   1887.461   711.4158     2.65   0.010     468.5866    3306.335
+       _cons |   10033.08   2256.685     4.45   0.000     5532.264     14533.9
+------------------------------------------------------------------------------
+
+. foreach variable in $controls{ // another example.
+  2.     su `variable'
+  3. }
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       trunk |         74    13.75676    4.277404          5         23
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+     foreign |         74    .2972973    .4601885          0          1
+
+. 
+. // Within group analysis //
+. // group by rep78 and make price_demeaned relative to the group (goofy way)
+. sort rep78
+
+. capture drop price_demeaned
+
+. by rep78:       summarize price // can also just do bysort rep78: ...
+
+---------------------------------------------------------------------------------------------------------
+-> rep78 = 1
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |          2      4564.5    522.5519       4195       4934
+
+---------------------------------------------------------------------------------------------------------
+-> rep78 = 2
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |          8    5967.625    3579.357       3667      14500
+
+---------------------------------------------------------------------------------------------------------
+-> rep78 = 3
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         30    6429.233     3525.14       3291      15906
+
+---------------------------------------------------------------------------------------------------------
+-> rep78 = 4
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         18      6071.5    1709.608       3829       9735
+
+---------------------------------------------------------------------------------------------------------
+-> rep78 = 5
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         11        5913    2615.763       3748      11995
+
+---------------------------------------------------------------------------------------------------------
+-> rep78 = .
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |          5      6430.4    3804.322       3799      12990
+
+
+.                         return list
+
+scalars:
+                  r(N) =  5
+              r(sum_w) =  5
+               r(mean) =  6430.4
+                r(Var) =  14472865.3
+                 r(sd) =  3804.321923812442
+                r(min) =  3799
+                r(max) =  12990
+                r(sum) =  32152
+
+.                         local price_mean = r(mean)
+
+.                         gen price_demeaned = price - `price_mean'
+
+.                         
+. // better way with egen and bysort
+. bysort rep78: egen avg_price = mean(price)
+
+. bysort rep78 origin: egen tot_price = total(price)
+
+. 
+. egen sum_of_vars = rowtotal(weight length) // na.rm = T
+
+. * gen sum_of_vars = weight + length // na.rm = F, returns NA if there's NA's
+. 
+. // assign observation numbers by group
+. cap drop obs_number
+
+. bysort foreign: gen obs_number = _n
+
+. cap drop tot_obs
+
+. bysort foreign: gen tot_obs = _N
+
+. /*
+> for fake_data, can group by workerid, generate observation numbers by workerid,
+> and keep if tot_obs ==8 to only keep workers observed across all 8 periods
+> */
+. 
+. // Collapsing data //
+. * useful for applying sample weights (see COMET ch 7 or below)
+. * seems like %>% group_by(...) %>% summarize(...) ?
+. 
+. // Reshaping/pivoting //
+. use "$data_dir\fake_data.dta", clear
+
+. 
+. reshape wide earnings region age start_year sample_weight quarter_birth, ///
+>         i(workerid) j(year)
+(note: j = 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011)
+
+Data                               long   ->   wide
+-----------------------------------------------------------------------------
+Number of obs.                   138138   ->   39999
+Number of variables                  11   ->     106
+j variable (17 values)             year   ->   (dropped)
+xij variables:
+                               earnings   ->   earnings1995 earnings1996 ... earnings2011
+                                 region   ->   region1995 region1996 ... region2011
+                                    age   ->   age1995 age1996 ... age2011
+                             start_year   ->   start_year1995 start_year1996 ... start_year2011
+                          sample_weight   ->   sample_weight1995 sample_weight1996 ... sample_weight2011
+                          quarter_birth   ->   quarter_birth1995 quarter_birth1996 ... quarter_birth2011
+-----------------------------------------------------------------------------
+
+.         
+. reshape long earnings region age start_year sample_weight quarter_birth, ///
+>         i(workerid) j(year)
+(note: j = 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011)
+
+Data                               wide   ->   long
+-----------------------------------------------------------------------------
+Number of obs.                    39999   ->  679983
+Number of variables                 106   ->      11
+j variable (17 values)                    ->   year
+xij variables:
+earnings1995 earnings1996 ... earnings2011->   earnings
+   region1995 region1996 ... region2011   ->   region
+            age1995 age1996 ... age2011   ->   age
+start_year1995 start_year1996 ... start_year2011->start_year
+sample_weight1995 sample_weight1996 ... sample_weight2011->sample_weight
+quarter_birth1995 quarter_birth1996 ... quarter_birth2011->quarter_birth
+-----------------------------------------------------------------------------
+
+. keep if !missing(earnings) // retrieve original dataset
+(541,845 observations deleted)
+
+.         // reshape wide introduced NA's since workers only observed some years
+. 
+. // Merging and appending //
+. duplicates report workerid year
+
+Duplicates in terms of workerid year
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |       138138             0
+--------------------------------------
+
+. 
+. // create the macro-level dataset
+. gen log_earnings = log(earnings)
+
+. collapse (mean) avg_log_earnings = log_earnings ///
+>         (count) total_employment = log_earnings, by(region year)
+
+. label var avg_log_earnings "Average Log-earnings in Region-Year Cell"
+
+. save "$data_dir\region_year_data", replace
+file .\data\region_year_data.dta saved
+
+. 
+. use "$data_dir\fake_data.dta", clear
+
+. 
+. cap drop _merge // good practice since merge creates a _merge variable
+
+. merge m:1 region year using "$data_dir\region_year_data.dta"
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                           138,138  (_merge==3)
+    -----------------------------------------
+
+.         // %>% left_join(region_year_data, by = c("region", "year"))
+. keep if _merge==3 // keep only obs correctly matched
+(0 observations deleted)
+
+. 
+. * append using "$data_dir\data_to_append.dta" // appending
+. 
+. capture log close
