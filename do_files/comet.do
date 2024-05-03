@@ -35,6 +35,7 @@ lookfor weight // search for a variable, useful if there are many
 
 // Investigate duplicates //
 /*
+duplicates report id term
 duplicates tag id term, generate(dupes)
 keep if dupes > 0
 sort dupes id term
@@ -172,9 +173,6 @@ reshape long earnings region age start_year sample_weight quarter_birth, ///
 keep if !missing(earnings) // retrieve original dataset
 	// reshape wide introduced NA's since workers only observed some years
 
-// Merging and appending //
-duplicates report workerid year
-
 // Collapsing data //
 * seems like %>% group_by(...) %>% summarize(...) ?
 // create the macro-level dataset
@@ -186,6 +184,7 @@ save "$data_dir\region_year_data", replace
 
 use "$data_dir\fake_data.dta", clear
 
+// Merging and appending //
 cap drop _merge // good practice since merge creates a _merge variable
 merge m:1 region year using "$data_dir\region_year_data.dta"
 	// %>% left_join(region_year_data, by = c("region", "year"))
